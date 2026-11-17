@@ -1,89 +1,91 @@
-# CodeNecromancer - Flutter Marketplace & CRUD dengan Docker
+# CodeNecromancer
 
-Aplikasi Marketplace Blueprint Source Code dengan implementasi lengkap metode **CRUD (Create, Read, Update, Delete)** yang terhubung langsung ke database **MySQL** melalui container **Docker (Apache + PHP API + MySQL + phpMyAdmin)**.
+Tugas besar (TUBES) mata kuliah **Pemrograman Mobile 1 (Politeknik Negeri Indramayu)**.  
+**CodeNecromancer** adalah aplikasi Flutter berbentuk marketplace blueprint kode, dengan peran pembeli (*buyer*) dan penjual (*seller*), serta backend PHP + MySQL yang dijalankan memakai Docker.
 
----
-
-## 🚀 Arsitektur Docker & Backend
-
-Sistem backend menggunakan Docker Compose dengan 3 service:
-1. **`web`** (Apache + PHP 8.2 + ekstensi `mysqli`):
-   - Port: `http://localhost:80`
-   - Volume: `./htdocs` di-mount ke `/var/www/html`
-   - Direktori API: `htdocs/api_blueprint/`
-2. **`db`** (MySQL 8.0):
-   - Port: `3306`
-   - Database: `db_code_necromancer`
-   - Tabel: `tb_blueprints`
-   - Inisialisasi otomatis: `database/init.sql`
-   - User: `necro_user` / `necro_password` (Root: `rootpassword`)
-3. **`phpmyadmin`** (phpMyAdmin Web GUI):
-   - Port: `http://localhost:8080`
-   - Server: `db`
-   - Password Root: `rootpassword`
+**Branch:** `tubas`
 
 ---
 
-## 🛠️ Menjalankan Docker
+## Fitur
 
-### 1. Menjalankan Container (Background)
+- **Splash screen, login, dan registrasi** (pemilihan peran, indikator kekuatan password)
+- **Pembeli (Buyer):** beranda, pencarian dan filter, pustaka (*library*), pesanan, wishlist, dan permintaan kode (*request code*)
+- **Penjual (Seller):** halaman jual (*sell*) untuk mengelola blueprint
+- **Proses CRUD blueprint:** tambah, lihat, ubah, dan hapus (*Create, Read, Update, Delete*) melalui API PHP
+- **Profil pengguna**
+- **Navigasi bawah (*bottom navigation bar*) dan tema aplikasi terpusat**
+
+---
+
+## Teknologi
+
+| Bagian | Teknologi |
+|---|---|
+| **Frontend** | Flutter (Dart) |
+| **Backend / API** | PHP, format JSON |
+| **Database** | MySQL (`database/init.sql`) |
+| **Lingkungan** | Docker (`Dockerfile`, `docker-compose.yml`) |
+
+---
+
+## Struktur Proyek
+
+```text
+.
+├── lib/
+│   ├── config/api_config.dart           # konfigurasi alamat API
+│   ├── constants/app_assets.dart        # daftar aset gambar
+│   ├── models/blueprint_model.dart
+│   ├── screens/                         # login, register, home, library, orders,
+│   │   ├── buyer/                       # wishlist, request code, profile, dll.
+│   │   └── seller/
+│   ├── services/blueprint_service.dart
+│   ├── navigation/                      # bottom nav bar
+│   ├── theme/app_theme.dart
+│   ├── widgets/                         # komponen UI yang dipakai ulang
+│   └── main.dart
+├── htdocs/api_blueprint/                # API PHP: create, read, edit, update, delete, koneksi
+├── database/init.sql                    # struktur dan data awal database
+├── image/                               # aset gambar dan ikon
+├── test/                                # pengujian (assets_test, crud_test, widget_test)
+├── Dockerfile
+└── docker-compose.yml
+```
+
+---
+
+## Cara Menjalankan
+
+### 1. Jalankan Docker
 ```bash
 docker compose up -d
 ```
+> **Catatan Database:** `database/init.sql` berisi struktur dan data awal; impor lewat phpMyAdmin (`http://localhost:8080`) jika belum otomatis dimuat.
 
-### 2. Memeriksa Status Container
+### 2. Cek Alamat IP Komputer
 ```bash
-docker compose ps
+hostname -I
 ```
+Atur alamat API di `lib/config/api_config.dart` sesuai IP komputer (atau atur melalui tombol konfigurasi IP di dalam aplikasi).
 
-### 3. Menghentikan Container
+### 3. Jalankan Aplikasi
 ```bash
-docker compose stop
+flutter pub get
+flutter run
 ```
 
-### 4. Membuka phpMyAdmin di Browser
-Buka browser dan akses:
+### 4. Jalankan Pengujian (Opsional)
+```bash
+flutter test
 ```
-http://localhost:8080
-```
-- **Server:** `db`
-- **Username:** `root`
-- **Password:** `rootpassword`
+
+> **Perhatian:** Pastikan perangkat dan komputer berada pada jaringan yang sama, dan firewall mengizinkan port web server.
 
 ---
 
-## 📡 Daftar Endpoint REST API
+## Pembuat
 
-| Metode | Endpoint | Deskripsi |
-|---|---|---|
-| **GET** | `/api_blueprint/read.php` | Mengambil seluruh daftar blueprint dari MySQL (mendukung query `search` & `stack`) |
-| **POST** | `/api_blueprint/create.php` | Menambahkan blueprint baru ke MySQL |
-| **POST** | `/api_blueprint/update.php` | Memperbarui data blueprint berdasarkan `id_blueprint` |
-| **POST** | `/api_blueprint/delete.php` | Menghapus blueprint berdasarkan `id_blueprint` |
-
----
-
-## 📱 Fitur CRUD pada Aplikasi Flutter
-
-1. **Create (Tambah)**:
-   - Tombol **"Tambah"** pada status bar dashboard atau floating action button di Seller Studio (`/sell`).
-   - Formulir validasi: Judul, Author/Publisher, Harga Valuasi, Ekosistem/Stack (Choice Chips), Deskripsi, dan AST Verification switch.
-2. **Read (Tampil Data)**:
-   - Data otomatis diambil dari Docker MySQL via `BlueprintService`.
-   - Mendukung pencarian teks (*live search*), filter kategori (*CategoryChips*), dan *Pull-to-Refresh* (*swipe down*).
-   - Tapping kartu menampilkan halaman detail `IPDetailScreen`.
-   - Dilengkapi *graceful fallback* jika Docker backend sedang offline.
-3. **Update (Ubah)**:
-   - Tombol **"Edit"** di setiap kartu blueprint di Seller Studio (`/sell`) atau ikon edit di `IPDetailScreen`.
-   - Mengisi data lama ke dalam formulir dan memperbarui data di MySQL secara instan.
-4. **Delete (Hapus)**:
-   - Tombol **"Hapus"** dengan dialog konfirmasi keamanan di Seller Studio (`/sell`) atau ikon hapus di `IPDetailScreen`.
-
----
-
-## 🌐 Konfigurasi IP untuk Perangkat Android
-
-- **Android Emulator:** otomatis menggunakan `10.0.2.2`
-- **Linux Desktop / Web:** otomatis menggunakan `127.0.0.1` (atau `localhost`)
-- **HP Fisik Android via Wi-Fi:**
-  Klik tombol **"IP Host"** pada banner status Docker di dashboard aplikasi untuk mengubah IP menjadi IP Wi-Fi laptop (misal: `192.168.0.150`).
+- **Nama:** Diding Hidayat
+- **NIM:** 2505032
+- **GitHub:** [@dayat3332](https://github.com/dayat3332)
